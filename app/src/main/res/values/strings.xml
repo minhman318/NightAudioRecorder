@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">Night Audio Recorder</string>
+    <string name="instruction">
+        1. Trước khi đi ngủ, bạn nhấn nút BẮT ĐẦU.\n
+        2. Thu nhỏ ứng dụng và đặt điện thoại ở nơi cố định cách người không quá 1 mét.\n
+        3. Ứng dụng tự động thu âm và tự động kết thúc (không tự nhấn nút KẾT THÚC).\n
+        5. Hôm sau, bạn gửi lại toàn bộ file trong thư mục <i>[Thư mục gốc bộ nhớ]/NightAudioRecorder/</i> cho mình (Vì file khá nặng nên bạn hãy upload lên Drive).\n
+        6. Thù lao cộng tác viên sẽ được gửi ngay sau khi dữ liệu của bạn thỏa yêu cầu.\n\n
+        <b>Chú ý: Vui lòng đọc toàn bộ thông tin tại đây:\n</b> <a>https://docs.google.com/document/d/1cSKzsiKvUaMCfdKUlIaxPnUWQRFujXkA6G8uiDoSZNQ/edit?usp=sharing</a>\n\n
+        Xin cảm ơn bạn rất nhiều!
+    </string>
+    <string name="completion_msg">
+        Chương trình đang chạy bây giờ\nBấm phím home để thu nhỏ chương trình\n<b><i>Chúc bạn ngủ ngon!</i></b>
+    </string>
+    <string name="notification_msg">
+        Chương trình đang chạy\n
+        Sẽ thu âm trong khoảng thời gian từ %1$s đến %2$s
+    </string>
+</resources>
