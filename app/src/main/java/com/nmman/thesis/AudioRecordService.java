@@ -28,8 +28,8 @@ public class AudioRecordService extends Service {
     public static final int SAMPLE_RATE = 16000;
     public static final int FORMAT = AudioFormat.ENCODING_PCM_16BIT;
     public static final int BUFFER_SIZE = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNELS, FORMAT) * 2;
-    public static final int DURATION = 14400000; // 4 hours
-    public static final int DELAY_TIME = 60000; // 40 min
+    public static final int DURATION = 18000000; // 4 hours
+    public static final int DELAY_TIME = 1800000; // 40 min
     public static final String OUTPUT_DIR = "NightAudioRecorder";
     public static final String OUTPUT_FILE_PREFIX = "rc-";
     public static final String EXTENSION = "dat";
@@ -90,11 +90,11 @@ public class AudioRecordService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        startTime = Calendar.getInstance();
-        endTime = Calendar.getInstance();
-        startTime.setTimeInMillis(startTime.getTimeInMillis() + DELAY_TIME);
-        endTime.setTimeInMillis(endTime.getTimeInMillis() + DURATION);
         if (!scheduled.get()) {
+            startTime = Calendar.getInstance();
+            endTime = Calendar.getInstance();
+            startTime.setTimeInMillis(startTime.getTimeInMillis() + DELAY_TIME);
+            endTime.setTimeInMillis(endTime.getTimeInMillis() + DURATION);
             scheduled.set(true);
             Handler handler = new Handler();
             handler.postDelayed(() -> {
