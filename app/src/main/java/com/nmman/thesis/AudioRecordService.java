@@ -17,9 +17,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
-import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AudioRecordService extends Service {
@@ -29,7 +27,6 @@ public class AudioRecordService extends Service {
     public static final int FORMAT = AudioFormat.ENCODING_PCM_16BIT;
     public static final int BUFFER_SIZE = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNELS, FORMAT) * 2;
     public static final long DURATION = 18000000; // 5 hours
-    public static final long DELAY_TIME = 1800000; // 30 min
     public static final String OUTPUT_DIR = "NightAudioRecorder";
     public static final String OUTPUT_FILE_PREFIX = "rc-";
     public static final String EXTENSION = "dat";
@@ -49,8 +46,6 @@ public class AudioRecordService extends Service {
         }
         FileOutputStream fs = null;
         try {
-            Thread.sleep(DELAY_TIME);
-            audioRecord.startRecording();
             fs = new FileOutputStream(outputFile, false);
             while (inProgress.get()) {
                 long time = Calendar.getInstance().getTimeInMillis();
@@ -102,13 +97,13 @@ public class AudioRecordService extends Service {
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (!scheduled.get()) {
+            startNotification();
             startTime = Calendar.getInstance();
             endTime = Calendar.getInstance();
-            startTime.setTimeInMillis(startTime.getTimeInMillis() + DELAY_TIME);
             endTime.setTimeInMillis(startTime.getTimeInMillis() + DURATION);
             scheduled.set(true);
-            startNotification();
             inProgress.set(true);
+            audioRecord.startRecording();
             recordThread.start();
             Toast.makeText(this, "Đã bắt đầu", Toast.LENGTH_SHORT).show();
         } else {
@@ -140,10 +135,7 @@ public class AudioRecordService extends Service {
     }
 
     private void startNotification() {
-        SimpleDateFormat formatter = new SimpleDateFormat("HH:mm:ss", Locale.ENGLISH);
-        String msg = String.format("Chương trình sẽ thu âm từ %s đến %s",
-                formatter.format(startTime.getTime()),
-                formatter.format(endTime.getTime()));
+        String msg = "Đang chạy ...";
         Intent notificationIntent = new Intent(this, MainActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
         Notification notification = new NotificationCompat.Builder(this, MainActivity.CHANNEL_ID)
