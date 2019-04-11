@@ -8,7 +8,6 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Environment;
-import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
@@ -16,6 +15,7 @@ import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
@@ -28,8 +28,8 @@ public class AudioRecordService extends Service {
     public static final int SAMPLE_RATE = 16000;
     public static final int FORMAT = AudioFormat.ENCODING_PCM_16BIT;
     public static final int BUFFER_SIZE = AudioRecord.getMinBufferSize(SAMPLE_RATE, CHANNELS, FORMAT) * 2;
-    public static final int DURATION = 18000000; // 4 hours
-    public static final int DELAY_TIME = 1800000; // 40 min
+    public static final long DURATION = 18000000; // 5 hours
+    public static final long DELAY_TIME = 1800000; // 30 min
     public static final String OUTPUT_DIR = "NightAudioRecorder";
     public static final String OUTPUT_FILE_PREFIX = "rc-";
     public static final String EXTENSION = "dat";
@@ -47,7 +47,11 @@ public class AudioRecordService extends Service {
         if (!outputFile.getParentFile().exists()) {
             outputFile.getParentFile().mkdir();
         }
-        try (final FileOutputStream fs = new FileOutputStream(outputFile, false)) {
+        FileOutputStream fs = null;
+        try {
+            Thread.sleep(DELAY_TIME);
+            audioRecord.startRecording();
+            fs = new FileOutputStream(outputFile, false);
             while (inProgress.get()) {
                 long time = Calendar.getInstance().getTimeInMillis();
                 if (time >= endTime.getTimeInMillis()) {
@@ -69,6 +73,13 @@ public class AudioRecordService extends Service {
         } finally {
             terminatedFlag = 0;
             scheduled.set(false);
+            if (fs != null) {
+                try {
+                    fs.close();
+                } catch (IOException e) {
+                    // Nothing to do
+                }
+            }
         }
     });
 
@@ -94,15 +105,11 @@ public class AudioRecordService extends Service {
             startTime = Calendar.getInstance();
             endTime = Calendar.getInstance();
             startTime.setTimeInMillis(startTime.getTimeInMillis() + DELAY_TIME);
-            endTime.setTimeInMillis(endTime.getTimeInMillis() + DURATION);
+            endTime.setTimeInMillis(startTime.getTimeInMillis() + DURATION);
             scheduled.set(true);
-            Handler handler = new Handler();
-            handler.postDelayed(() -> {
-                audioRecord.startRecording();
-                inProgress.set(true);
-                recordThread.start();
-            }, DELAY_TIME);
             startNotification();
+            inProgress.set(true);
+            recordThread.start();
             Toast.makeText(this, "Đã bắt đầu", Toast.LENGTH_SHORT).show();
         } else {
             Toast.makeText(this, "Chương trình vẫn đang chạy", Toast.LENGTH_SHORT).show();
@@ -124,6 +131,7 @@ public class AudioRecordService extends Service {
 
     private void stopRecord() {
         inProgress.set(false);
+        scheduled.set(false);
         audioRecord.stop();
         audioRecord.release();
         stopForeground(true);
