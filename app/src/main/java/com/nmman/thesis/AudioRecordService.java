@@ -16,8 +16,11 @@ import android.widget.Toast;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.ByteBuffer;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Locale;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AudioRecordService extends Service {
@@ -37,6 +40,8 @@ public class AudioRecordService extends Service {
     private Calendar endTime;
     private int terminatedFlag = 0;
     private String errorMsg = "";
+    private final File logFile = new File(Environment.getExternalStorageDirectory().toString(),
+            OUTPUT_DIR + "/" + "log.txt");
 
     private final Thread recordThread = new Thread(() -> {
         File outputFile = new File(Environment.getExternalStorageDirectory().toString(),
@@ -64,8 +69,10 @@ public class AudioRecordService extends Service {
             terminatedFlag = -1;
             errorMsg = e.getMessage();
             e.printStackTrace();
+            logError(e);
             AudioRecordService.this.stopSelf();
         } finally {
+            log("End reading thread");
             terminatedFlag = 0;
             scheduled.set(false);
             if (fs != null) {
@@ -91,11 +98,13 @@ public class AudioRecordService extends Service {
     @Override
     public void onDestroy() {
         stopRecord();
+        log("Service destroy");
         super.onDestroy();
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        log("Sevice start command");
         if (!scheduled.get()) {
             startNotification();
             startTime = Calendar.getInstance();
@@ -103,6 +112,7 @@ public class AudioRecordService extends Service {
             endTime.setTimeInMillis(startTime.getTimeInMillis() + DURATION);
             scheduled.set(true);
             inProgress.set(true);
+            log("Start recording");
             audioRecord.startRecording();
             recordThread.start();
             Toast.makeText(this, "Đã bắt đầu", Toast.LENGTH_SHORT).show();
@@ -112,12 +122,6 @@ public class AudioRecordService extends Service {
         return Service.START_STICKY;
     }
 
-    @Override
-    public boolean stopService(Intent name) {
-        stopRecord();
-        return super.stopService(name);
-    }
-
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
@@ -125,6 +129,7 @@ public class AudioRecordService extends Service {
     }
 
     private void stopRecord() {
+        log("Stop recording");
         inProgress.set(false);
         scheduled.set(false);
         audioRecord.stop();
@@ -152,5 +157,28 @@ public class AudioRecordService extends Service {
     private String createFileName() {
         long time = Calendar.getInstance().getTimeInMillis();
         return String.format("%s%s.%s", OUTPUT_FILE_PREFIX, String.valueOf(time), EXTENSION);
+    }
+
+    private void log(String line) {
+        try (PrintWriter writer = new PrintWriter(new FileOutputStream(logFile, true))) {
+            writer.println(currentTimeStr() + ": " + line);
+        } catch (Exception e) {
+
+        }
+    }
+
+    private void logError(Exception ex) {
+        try (PrintWriter writer = new PrintWriter(new FileOutputStream(logFile, true))) {
+            writer.println(currentTimeStr() + ": Exception");
+            ex.printStackTrace(writer);
+        } catch (Exception e) {
+
+        }
+    }
+
+    private String currentTimeStr() {
+        Calendar time = Calendar.getInstance();
+        SimpleDateFormat formatter = new SimpleDateFormat("dd-MM-yyyy HH:mm:ss", Locale.ENGLISH);
+        return formatter.format(time.getTime());
     }
 }
